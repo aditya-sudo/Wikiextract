@@ -10,19 +10,16 @@ HIWIKI_FILE='hiwiki-pages-meta-current.xml'
 # if you have already extracted you can point EXTRACTED_FILE to it otherwise let it be
 EXTRACTED_FILE='extracted'
 
-
 get_seeded_random()
 {
   openssl enc -aes-256-ctr -pass pass:"$1" -nosalt \
     </dev/zero 2>/dev/null
 }
 
-
 EXTRACT_TEXT='python3 WikiExtractor.py --quiet --no_templates --filter_disambig_pages   --min_text_length 20   $HIWIKI_FILE -b 5G -o -'
 TOKENIZE_SENTENCE='python3 indic_sentence_tokenizer.py'
 SELECT_RANDOM_SENTENCE='shuf -n $OUTPUT_SENT --random-source=<(get_seeded_random $SEED)'
 INSERT_ERRORS='python3 insert_errors.py hindi.output  --single --edits'
-
 
 if [ ! -f $EXTRACTED_FILE ]; then
     eval "$EXTRACT_TEXT>$EXTRACTED_FILE" 
@@ -34,6 +31,12 @@ if [ -f $EXTRACTED_FILE ] && [ ! -f hindi-pos-tagger-3.0/hindi.input.txt ]; then
     eval $SELECT_RANDOM_SENTENCE<tmp.tok>hindi.input.txt
     wc -l hindi.input.txt
     rm tmp.tok
+
+    # Ensure the directory exists before moving the file
+    if [ ! -d hindi-pos-tagger-3.0 ]; then
+        mkdir hindi-pos-tagger-3.0
+    fi
+
     mv hindi.input.txt hindi-pos-tagger-3.0/hindi.input.txt
 fi
 
@@ -46,4 +49,3 @@ if [ -f hindi-pos-tagger-3.0/hindi.input.txt ] && [ ! -f hindi.output ]; then
 fi
 
 eval "$INSERT_ERRORS>hiwiki.augmented.edits"
-
