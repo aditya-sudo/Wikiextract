@@ -47,8 +47,13 @@ if [ -f hindi-pos-tagger-3.0/hindi.input.txt ] && [ ! -f hindi.output ]; then
     if [ -f Makefile ]; then
         make tag || { echo "Makefile does not have a 'tag' target."; exit 1; }
     else
-        echo "Makefile not found. Please ensure hindi-pos-tagger-3.0 contains the necessary build files."
-        exit 1
+        echo "Makefile not found. Attempting to run the POS tagger script directly."
+        if [ -f pos_tagger.py ]; then
+            python3 pos_tagger.py hindi.input.txt > hindi.output || { echo "Failed to run pos_tagger.py."; exit 1; }
+        else
+            echo "Neither Makefile nor pos_tagger.py found. Please ensure hindi-pos-tagger-3.0 contains the necessary files."
+            exit 1
+        fi
     fi
     
     wc -l hindi.output
