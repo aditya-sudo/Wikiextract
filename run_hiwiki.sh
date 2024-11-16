@@ -10,25 +10,28 @@ HIWIKI_FILE='hiwiki-pages-meta-current.xml'
 # if you have already extracted you can point EXTRACTED_FILE to it otherwise let it be
 EXTRACTED_FILE='extracted'
 
+
 get_seeded_random()
 {
   openssl enc -aes-256-ctr -pass pass:"$1" -nosalt \
     </dev/zero 2>/dev/null
 }
 
-EXTRACT_TEXT='python3 WikiExtractor.py --quiet --no_templates --filter_disambig_pages --min_text_length 20 $HIWIKI_FILE -b 5G -o -'
+
+EXTRACT_TEXT='python3 WikiExtractor.py --quiet --no_templates --filter_disambig_pages   --min_text_length 20   $HIWIKI_FILE -b 5G -o -'
 TOKENIZE_SENTENCE='python3 indic_sentence_tokenizer.py'
 SELECT_RANDOM_SENTENCE='shuf -n $OUTPUT_SENT --random-source=<(get_seeded_random $SEED)'
-INSERT_ERRORS='python3 insert_errors.py hindi.output --single --edits'
+INSERT_ERRORS='python3 insert_errors.py hindi.output  --single --edits'
+
 
 if [ ! -f $EXTRACTED_FILE ]; then
-    eval "$EXTRACT_TEXT > $EXTRACTED_FILE" 
+    eval "$EXTRACT_TEXT>$EXTRACTED_FILE" 
 fi
 
 if [ -f $EXTRACTED_FILE ] && [ ! -f hindi-pos-tagger-3.0/hindi.input.txt ]; then
     wc -l $EXTRACTED_FILE
-    eval "$TOKENIZE_SENTENCE < $EXTRACTED_FILE > tmp.tok"
-    eval $SELECT_RANDOM_SENTENCE < tmp.tok > hindi.input.txt
+    eval "$TOKENIZE_SENTENCE<$EXTRACTED_FILE>tmp.tok"
+    eval $SELECT_RANDOM_SENTENCE<tmp.tok>hindi.input.txt
     wc -l hindi.input.txt
     rm tmp.tok
 
@@ -36,42 +39,16 @@ if [ -f $EXTRACTED_FILE ] && [ ! -f hindi-pos-tagger-3.0/hindi.input.txt ]; then
     if [ ! -d hindi-pos-tagger-3.0 ]; then
         mkdir hindi-pos-tagger-3.0
     fi
-
+    
     mv hindi.input.txt hindi-pos-tagger-3.0/hindi.input.txt
 fi
 
 if [ -f hindi-pos-tagger-3.0/hindi.input.txt ] && [ ! -f hindi.output ]; then
     cd hindi-pos-tagger-3.0
-    
-    # Check if a Makefile exists and build the tagger if possible
-    if [ -f Makefile ]; then
-        make tag || { echo "Makefile does not have a 'tag' target."; exit 1; }
-    else
-        echo "Makefile not found. Attempting to run the POS tagger script directly."
-        if [ -f pos_tagger.py ]; then
-            python3 pos_tagger.py hindi.input.txt > hindi.output || { echo "Failed to run pos_tagger.py."; exit 1; }
-        else
-            echo "Neither Makefile nor pos_tagger.py found. Please ensure hindi-pos-tagger-3.0 contains the necessary files."
-            exit 1
-        fi
-    fi
-    
+    make tag
     wc -l hindi.output
     cd ..
     mv hindi-pos-tagger-3.0/hindi.output hindi.output
 fi
 
-if [ -f hindi.output ]; then
-    eval "$INSERT_ERRORS > hiwiki.augmented.edits"
-else
-    echo "hindi.output not found. Error in POS tagging step."
-    exit 1
-fi
-
-# Additional step to convert to wdiff format if hiwiki.augmented.edits exists
-if [ -f hiwiki.augmented.edits ]; then
-    head -4000 hiwiki.augmented.edits | python scripts/convert_to_wdiff.py | shuf -n 40
-else
-    echo "hiwiki.augmented.edits not found. Error in inserting errors step."
-    exit 1
-fi
+eval "$INSERT_ERRORS>hiwiki.augmented.edits"
