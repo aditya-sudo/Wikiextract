@@ -34,6 +34,11 @@ if [ -f $EXTRACTED_FILE ] && [ ! -f hindi-pos-tagger-3.0/hindi.input.txt ]; then
     eval $SELECT_RANDOM_SENTENCE<tmp.tok>hindi.input.txt
     wc -l hindi.input.txt
     rm tmp.tok
+
+    if [ ! -d hindi-pos-tagger-3.0 ]; then
+    mkdir hindi-pos-tagger-3.0
+    fi
+
     mv hindi.input.txt hindi-pos-tagger-3.0/hindi.input.txt
 fi
 
